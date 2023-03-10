@@ -5,6 +5,8 @@ create_results_route = "nitestmonitor/v2/results"
 create_steps_route = "nitestmonitor/v2/steps"
 update_results_route = "nitestmonitor/v2/update-results"
 update_steps_route = "nitestmonitor/v2/update-steps"
+delete_results_route = "nitestmonitor/v2/delete-results"
+delete_result_route = "nitestmonitor/v2/results"
 
 def print_usage_and_exit(error:str):
     print("This example requires a configuration.")
@@ -66,6 +68,20 @@ def update_test_results_request(results: dict, determine_status_from_steps: bool
         "results": results,
         "determineStatusFromSteps": determine_status_from_steps
     }
+
+def delete_results_request(result_ids, delete_steps):
+    """
+    creates a delete test results request object
+    dictionary required for deleting the existing test results.
+    :param result_ids: List of result Ids that needs to be deleted
+    :param delete_steps: A boolean representing whether to delete steps associated with results or not
+    :return: A dictionary which is required for deleting the results
+    """
+    return {
+        "ids":result_ids,
+        "deleteSteps":delete_steps
+    }
+    pass
 
 def create_results(results):
     """
@@ -138,3 +154,18 @@ def raise_post_request(uri, body):
     request_response.raise_for_status()
 
     return request_response
+
+def delete_result(result_id, delete_steps = True):
+    request_uri = f"{base_uri}{delete_result_route}/{result_id}?deleteSteps{delete_steps}"
+    request_response = requests.delete(request_uri, headers=headers)
+
+    request_response.raise_for_status()
+
+def delete_results(result_ids, delete_steps = True):    
+    request_uri = f"{base_uri}{delete_results_route}"
+    body = delete_results_request(result_ids, delete_steps)   
+    request_response =  requests.post(request_uri, json=body, headers=headers)
+    
+    request_response.raise_for_status()
+
+
