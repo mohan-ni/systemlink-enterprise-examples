@@ -39,7 +39,7 @@ def main():
         input()
 
         # delete test result
-        request_response = test_data_manager_client.delete_result(test_result['id'], True)
+        test_data_manager_client.delete_result(test_result['id'], True)
         print(f"\nThe test result with Id = {test_result['id']} has been deleted")
         
         # create multiple test results
@@ -57,7 +57,7 @@ def main():
         input()
 
         # Delete multiple test results
-        request_response = test_data_manager_client.delete_results(result_ids, True)
+        test_data_manager_client.delete_results(result_ids, True)
         print("\nResults has been deleted successfully")
         
     except Exception as e:
