@@ -72,7 +72,6 @@ def update_test_results_request(results: dict, determine_status_from_steps: bool
 def delete_results_request(result_ids, delete_steps):
     """
     creates a delete test results request object
-    dictionary required for deleting the existing test results.
     :param result_ids: List of result Ids that needs to be deleted
     :param delete_steps: A boolean representing whether to delete steps associated with results or not
     :return: A dictionary which is required for deleting the results
