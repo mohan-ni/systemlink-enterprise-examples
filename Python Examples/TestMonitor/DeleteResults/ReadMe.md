@@ -13,7 +13,7 @@ Running the Example
 To run the example, use the following command:
 
 ```
-python <filename.py> <url> <api_key>
+python <filename.py> <server_url> <api_key>
 ```
 
 For example: `python Delete_Results.py https://my_server apiKey`.

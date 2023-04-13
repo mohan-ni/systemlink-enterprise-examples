@@ -49,7 +49,7 @@ def main():
         response = test_data_manager_client.create_results(results=[test_result])
         test_result = response["results"][0]
         
-        print(f"The test result has been under part number={test_result['partNumber']} with Id = {test_result['id']}")
+        print(f"The test result has been created under part number={test_result['partNumber']} with Id = {test_result['id']}")
         print("Press enter to delete the result")
         input()
 
@@ -58,12 +58,12 @@ def main():
         print(f"\nThe test result with Id = {test_result['id']} has been deleted")
         
         # create multiple test results
-        print("\nCreating multiple test results.\nResult Ids has been listed down below")
+        print("\nCreating multiple test results.\nResult Ids are listed down below")
         result_ids = []
         
         result_ids = create_multiple_results(result_ids, test_result)
         
-        print("\nThe multiple results has been created successfully")
+        print("\nMultiple test results has been created successfully")
         print("Please enter to delete these results")
         input()
 
