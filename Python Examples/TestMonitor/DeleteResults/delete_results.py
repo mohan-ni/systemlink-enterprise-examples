@@ -13,8 +13,8 @@ def get_test_result():
     test_result = {
         "programName": "Power Test",
         "status": {
-            "statusType": "RUNNING",
-            "statusName": "Running"
+            "statusType": "PASSED",
+            "statusName": "Passed"
         },
         "systemId": None,
         "hostName": None,
@@ -24,7 +24,7 @@ def get_test_result():
         "partNumber": "NI-ABC-123-PWR1",
         "fileIds":None,
         "startedAt": str(datetime.datetime.now()),
-        "totalTimeInSeconds": 0.0
+        "totalTimeInSeconds": 13.6
     }
 
     return test_result
