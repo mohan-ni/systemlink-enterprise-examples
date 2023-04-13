@@ -143,6 +143,27 @@ def update_steps(steps):
 
     return request_response.json()
 
+def delete_result(result_id, delete_steps = True):
+    """
+    Deletes the existing test result.
+    :param result_id: result id which needs to be deleted
+    """
+    if result_id == None :
+        raise ValueError("Missing required parameter 'result_id' when calling ResultsApi->DeleteResultV2")
+    request_uri = f"{base_uri}{delete_result_route}/{result_id}?deleteSteps{delete_steps}"
+    request_response = raise_delete_request(request_uri)
+
+def delete_results(result_ids, delete_steps = True):
+    """
+    Deletes the existing test results.
+    :param result_ids: result ids which needs to be deleted
+    """
+    if len(result_ids) == 0 or result_ids == None:
+        raise ValueError("result_ids is a required property for DeleteResultsRequest and cannot be null or empty")
+    request_uri = f"{base_uri}{delete_results_route}"
+    body = delete_results_request(result_ids, delete_steps)   
+    request_response = raise_post_request(request_uri, body)
+
 def raise_post_request(uri, body):
     """
     Makes the post request API call.
@@ -155,19 +176,13 @@ def raise_post_request(uri, body):
 
     return request_response
 
-def delete_result(result_id, delete_steps = True):
-    if result_id == None :
-        raise ValueError("Missing required parameter 'result_id' when calling ResultsApi->DeleteResultV2")
-    request_uri = f"{base_uri}{delete_result_route}/{result_id}?deleteSteps{delete_steps}"
-    request_response = requests.delete(request_uri, headers=headers)
-
+def raise_delete_request(uri):
+    """
+    Makes the delete request API call.
+    :param uri: request uri which needs to be called
+    :return: json response of the api call
+    """
+    request_response = requests.delete(uri, headers=headers)
     request_response.raise_for_status()
 
-def delete_results(result_ids, delete_steps = True):
-    if len(result_ids) == 0 or result_ids == None:
-        raise ValueError("result_ids is a required property for DeleteResultsRequest and cannot be null or empty")
-    request_uri = f"{base_uri}{delete_results_route}"
-    body = delete_results_request(result_ids, delete_steps)   
-    request_response =  requests.post(request_uri, json=body, headers=headers)
-    
-    request_response.raise_for_status()
+    return request_response
