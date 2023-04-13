@@ -1,8 +1,8 @@
-Test Monitor Results Example
+Test Monitor Delete Results Example
 =================
 
 This is an python example demonstrating how to use the
-SystemLink Test Monitor API to create test results and steps.
+SystemLink Enterprise Test Monitor API to create test results and steps.
 
 Running the Example
 -------------------
@@ -17,6 +17,10 @@ python <filename.py> <url> <api_key>
 ```
 
 For example: `python Delete_Results.py https://my_server apiKey`.
+
+How to generate API key
+-----------------------
+Please refer to this [link](https://www.ni.com/docs/en-US/bundle/systemlink-enterprise/page/creating-an-api-key.html) for generating the API key
 
 About the Example
 -----------------
