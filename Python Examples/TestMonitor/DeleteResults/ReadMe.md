@@ -2,7 +2,7 @@ Test Monitor Delete Results Example
 =================
 
 This is an python example demonstrating how to use the
-SystemLink Enterprise Test Monitor API to create test results and steps.
+SystemLink Enterprise Test Monitor API to create and delete test results.
 
 Running the Example
 -------------------
