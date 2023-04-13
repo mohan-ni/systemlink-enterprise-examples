@@ -1,3 +1,12 @@
+"""
+SystemLink Enterprise TestMonitor delete results example
+
+This example creates a single test result and 
+deletes this created result by using Delete result Api and 
+creates multiple(five) test results and 
+deletes all these multiple results at a time by using delete-results Api.
+"""
+
 import uuid
 import sys
 import os
