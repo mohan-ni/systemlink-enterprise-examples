@@ -23,12 +23,16 @@ import sys
 import uuid
 import datetime
 from typing import Any, Tuple, Dict, List
+import argparse
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
 import test_data_manager_client
+
+base_uri = ""
+api_key = ""
 
 def measure_power(current: float, voltage: float = 0) -> Tuple[float, List[Dict], List[Dict]]:
     """
@@ -136,7 +140,7 @@ def update_step_status(step: Dict, status: str) -> Dict:
             "statusName": "Failed"
         }
     # Update the test step's status on the SystemLink enterprise.
-    response = test_data_manager_client.update_steps(steps=[step])
+    response = test_data_manager_client.update_steps(base_uri, api_key, steps=[step])
     return response
 
 
@@ -145,7 +149,7 @@ def create_parent_step(result_id: str) -> Dict:
     voltage_sweep_step_data = generate_step_data("Voltage Sweep", "SequenceCall")
     voltage_sweep_step_data["resultId"] = result_id
     # Create the step on the SystemLink enterprise.
-    response = test_data_manager_client.create_steps(steps=[voltage_sweep_step_data])
+    response = test_data_manager_client.create_steps(base_uri, api_key, steps=[voltage_sweep_step_data])
     if is_partial_success_response(response):
         print("Parent step is not created, please check whether you have correct access for creating the steps or check for the correct step details")
         return None
@@ -179,7 +183,7 @@ def create_child_steps(parent_step: Dict, result_id: str, current: float, low_li
             # Create the step on the SystemLink enterprise.
             measure_power_output_step_data["parentId"] = parent_step["stepId"]
             measure_power_output_step_data["resultId"] = result_id
-            response = test_data_manager_client.create_steps(steps=[measure_power_output_step_data])
+            response = test_data_manager_client.create_steps(base_uri, api_key, steps=[measure_power_output_step_data])
             if is_partial_success_response(response):
                 print("Child step is not created, please check for correct step details and you have correct access for creating the steps")
             else:
@@ -257,7 +261,7 @@ def is_partial_success_response(response: dict) -> bool:
 def create_result() -> dict:
     test_result = get_test_result()
 
-    response = test_data_manager_client.create_results(results=[test_result])
+    response = test_data_manager_client.create_results(base_uri, api_key, results=[test_result])
     if is_partial_success_response(response) :
         raise Exception("The test result is not created, please check for correct result details and you have correct access for creating the new test results")
     test_result = response["results"][0]
@@ -267,7 +271,7 @@ def create_result() -> dict:
 
 def update_result(test_result: dict) -> None:
     remove_if_key_exists(dict=test_result, key="workspace")
-    response = test_data_manager_client.update_results(results=[test_result])
+    response = test_data_manager_client.update_results(base_uri, api_key, results=[test_result])
     if is_partial_success_response(response):
         print("Test result is not updated, please check for correct result details and you have correct access for updating the test results")
     else:
@@ -275,7 +279,23 @@ def update_result(test_result: dict) -> None:
         print(f"Test result with id = {test_result['id']} is updated successfully")
 
 
+def get_arguments(base_uri, api_key):
+    parser = argparse.ArgumentParser(
+        prog="create_results_and_steps.py",
+        description="Demonstrates the create results and steps APIs by creating results and steps",
+        epilog="For further information, refer Readme."
+    )
+    parser.add_argument("-s", "--server", help="URL of the server with scheme, host and port if not default. Example: https://myserver:9091")
+    parser.add_argument("apiKey", help="API key to access the server. Example: asdfasdfDRSHSrsfgrSDSFG4451SRTds")
+    args = parser.parse_args()
+    base_uri = args.server
+    api_key = args.apiKey
+
+
+
 def main():
+    get_arguments(base_uri, api_key)
+    print(f"URI: {base_uri}\nAPI: {api_key}")
     try:
         test_result = create_result()
 

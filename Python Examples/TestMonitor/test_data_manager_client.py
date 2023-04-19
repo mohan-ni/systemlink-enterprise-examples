@@ -20,17 +20,17 @@ def print_usage_and_exit(error: str) -> None:
     print("python <example_filename.py> https://myserver:9091 api_key")
     quit()
 
-args = sys.argv
+# args = sys.argv
 
-if len(args) == 3 :
-    base_uri = args[1]
-    api_key = args[2]
-    if not base_uri.endswith('/') :
-        base_uri += "/"
-else:
-    print_usage_and_exit("Please pass all the required arguments")
+# if len(args) == 3 :
+#     base_uri = args[1]
+#     api_key = args[2]
+#     if not base_uri.endswith('/') :
+#         base_uri += "/"
+# else:
+#     print_usage_and_exit("Please pass all the required arguments")
 
-headers = { 'X-NI-API-KEY': api_key }
+# headers = { 'X-NI-API-KEY': api_key }
 
 def create_test_result_request(results: List) -> Dict:
     """
@@ -68,7 +68,7 @@ def update_test_results_request(results: List, determine_status_from_steps: bool
         "determineStatusFromSteps": determine_status_from_steps
     }
 
-def create_results(results:List) -> Dict:
+def create_results(base_uri, api_key, results:List) -> Dict:
     """
     Creates new test results from the supplied models. The server automatically generates the result ids.
     :param results: Results which needs to be created
@@ -78,11 +78,11 @@ def create_results(results:List) -> Dict:
         raise ValueError("Number of results needs to be created can not be empty")
     body = create_test_result_request(results)
     request_uri = base_uri + create_results_route
-    request_response = raise_post_request(request_uri, body)
+    request_response = raise_post_request(request_uri, api_key, body)
 
     return request_response.json()
 
-def update_results(results: List) -> Dict:
+def update_results(base_uri, api_key, results: List) -> Dict:
     """
     Updates existing test results by merging or replacing values.
     :param results: Results which needs to be updated
@@ -92,11 +92,11 @@ def update_results(results: List) -> Dict:
         raise ValueError("Number of results needs to be updated can not be empty")
     body = update_test_results_request(results, determine_status_from_steps=True)
     request_uri = base_uri + update_results_route
-    request_response = raise_post_request(request_uri, body)
+    request_response = raise_post_request(request_uri, api_key, body)
 
     return request_response.json()
 
-def create_steps(steps: List) -> any:
+def create_steps(base_uri, api_key, steps: List) -> any:
     """
     Creates new test steps from the supplied models. The result associated with the step must exist prior to step creation. The server automatically generates step ids if not supplied.
     :param steps: Steps which needs to be created
@@ -108,11 +108,11 @@ def create_steps(steps: List) -> any:
             steps, update_result_total_time=True
         )
     request_uri = base_uri + create_steps_route
-    request_response = raise_post_request(request_uri, body)
+    request_response = raise_post_request(request_uri, api_key, body)
 
     return request_response.json()
 
-def update_steps(steps: List) -> any:
+def update_steps(base_uri, api_key, steps: List) -> any:
     """
     Updates existing steps by merging or replacing values.
     :param steps: Steps which needs to be updated
@@ -124,17 +124,19 @@ def update_steps(steps: List) -> any:
                 steps, update_result_total_time=True
             )
     request_uri = base_uri + update_steps_route
-    request_response = raise_post_request(request_uri, body)
+    request_response = raise_post_request(request_uri, api_key, body)
 
     return request_response.json()
 
-def raise_post_request(uri: str, body: Dict) -> requests.Response:
+def raise_post_request(uri: str, api_key: str, body: Dict) -> requests.Response:
     """
     Makes the post request API call.
     :param uri: request uri which needs to be called
     :param body: API call body
     :return: json response of the api call
     """
+    headers = { 'X-NI-API-KEY': api_key }
+
     request_response =  requests.post(uri, json=body, headers=headers)
     request_response.raise_for_status()
 
