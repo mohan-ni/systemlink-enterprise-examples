@@ -23,6 +23,7 @@ import sys
 import uuid
 import datetime
 from typing import Any, Tuple, Dict, List
+import click
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -30,7 +31,7 @@ sys.path.append(parent)
 
 import test_data_manager_client
 
-def measure_power(current: float, voltage: float = 0) -> Tuple[float, List[Any], List[Any]]:
+def measure_power(current: float, voltage: float = 0) -> Tuple[float, List[Dict], List[Dict]]:
     """
     Simulates taking an electrical power measurement.
     This introduces some random current and voltage loss.
@@ -51,7 +52,7 @@ def measure_power(current: float, voltage: float = 0) -> Tuple[float, List[Any],
     return power, inputs, outputs
 
 
-def build_power_measurement_params(power: float, low_limit: float, high_limit: float, status: Any) -> Any:
+def build_power_measurement_params(power: float, low_limit: float, high_limit: float, status: Dict) -> Dict:
     """
     Builds a Test Monitor measurement parameter object for the power test.
     :param power: The electrical power measurement.
@@ -75,14 +76,19 @@ def build_power_measurement_params(power: float, low_limit: float, high_limit: f
     return parameters
 
 
+def remove_if_key_exists(dict: Dict, key: str) -> None:
+    if key in dict.keys():
+        dict.pop(key)
+
+
 def generate_step_data(
     name: str,
     step_type: str,
-    inputs: List[Any] = None,
-    outputs: List[Any] = None,
-    parameters: Any = None,
+    inputs: List[Dict] = None,
+    outputs: List[Dict] = None,
+    parameters: Dict = None,
     status: Dict = None,
-):
+) -> Dict:
     """
     Creates the step data and
     populates it to match the TestStand data model.
@@ -107,7 +113,7 @@ def generate_step_data(
         "data": parameters,
         "dataModel": "TestStand",
         "name": name,
-        "startedAt": None,
+        "startedAt":  str(datetime.datetime.utcnow()),
         "status": step_status,
         "stepType": step_type,
         "totalTimeInSeconds": random.uniform(0, 1) * 10,
@@ -118,7 +124,76 @@ def generate_step_data(
     return step_data
 
 
-def update_step_status(step: Any, status: str) -> Any:
+def is_partial_success_response(response: Dict) -> bool:
+    return "error" in response.keys()
+
+
+def get_test_result() -> Dict:
+    test_result = {
+        "programName": "Power Test",
+        "status": {
+            "statusType": "RUNNING",
+            "statusName": "Running"
+        },
+        "systemId": None,
+        "hostName": None,
+        "properties":None,
+        "serialNumber": str(uuid.uuid4()),
+        "operator": "John Smith",
+        "partNumber": "NI-ABC-123-PWR1",
+        "fileIds":None,
+        "startedAt": str(datetime.datetime.utcnow()),
+        "totalTimeInSeconds": 0.0
+    }
+
+    return test_result
+
+
+def create_result() -> Dict:
+    test_result = get_test_result()
+
+    response = test_data_manager_client.create_results(results=[test_result])
+    if is_partial_success_response(response) :
+        raise Exception("The test result is not created, please check for correct result details and you have correct access for creating the new test results")
+    test_result = response["results"][0]
+    print(f"New test result is created under part number = {test_result['partNumber']} with Id = {test_result['id']}")
+    
+    return test_result
+
+
+def update_result(test_result: Dict) -> None:
+
+    # If we include the workspace in the update result request, the privileges required to perform the update operation
+    # is to delete the existing test result and to create a new test result for that workspace. 
+    # Sometimes the clients via system management do not have delete permissions, at that time they will get 404 unauthorized error.
+    # To deal with this situation we are removing the workspace field from the request body.
+    remove_if_key_exists(dict=test_result, key="workspace")
+    response = test_data_manager_client.update_results(results=[test_result])
+    if is_partial_success_response(response):
+        print("Test result is not updated, please check for correct result details and you have correct access for updating the test results")
+    else:
+        test_result = response["results"][0]
+        print(f"Test result with id = {test_result['id']} is updated successfully")
+
+
+def create_steps(test_result: Dict) -> None:
+    # Set test limits
+    low_limit = 0
+    high_limit = 70
+
+    """
+    Simulate a sweep across a range of electrical current and voltage.
+    For each value, calculate the electrical power (P=IV).
+    """
+    for current in range(0, 10):
+        voltage_sweep_step = create_parent_step(test_result["id"])
+        if voltage_sweep_step != None:
+            create_child_steps(voltage_sweep_step, test_result["id"], current, low_limit, high_limit)
+        else:
+            print("Skipping the child steps creation as parent step is not created")
+
+
+def update_step_status(step: Dict, status: str) -> Dict:
     """
     Updates the step status based on the given status string
     :param step: represents step which needs to be updated
@@ -136,19 +211,25 @@ def update_step_status(step: Any, status: str) -> Any:
             "statusName": "Failed"
         }
     # Update the test step's status on the SystemLink enterprise.
-    return test_data_manager_client.update_steps(steps=[step])
+    response = test_data_manager_client.update_steps(steps=[step])
+    return response
 
 
-def create_parent_step(result_id):
+def create_parent_step(result_id: str) -> Dict:
     # Generate a parent step to represent a sweep of voltages at a given current.
     voltage_sweep_step_data = generate_step_data("Voltage Sweep", "SequenceCall")
     voltage_sweep_step_data["resultId"] = result_id
     # Create the step on the SystemLink enterprise.
     response = test_data_manager_client.create_steps(steps=[voltage_sweep_step_data])
-    return response["steps"][0]
+    if is_partial_success_response(response):
+        print("Parent step is not created, please check whether you have correct access for creating the steps or check for the correct step details")
+        return None
+    step = response["steps"][0]
+    print(f"New parent step is created with step id = {step['stepId']} under result with id = {step['resultId']}")
+    return step
 
 
-def create_child_steps(parent_step, result_id, current, low_limit, high_limit):
+def create_child_steps(parent_step: Dict, result_id: str, current: float, low_limit: float, high_limit: float) -> Dict:
     for voltage in range(0, 10):
             # Simulate obtaining a power measurement.
             power, inputs, outputs = measure_power(current, voltage)
@@ -174,73 +255,60 @@ def create_child_steps(parent_step, result_id, current, low_limit, high_limit):
             measure_power_output_step_data["parentId"] = parent_step["stepId"]
             measure_power_output_step_data["resultId"] = result_id
             response = test_data_manager_client.create_steps(steps=[measure_power_output_step_data])
-            measure_power_output_step = response["steps"][0]
+            if is_partial_success_response(response):
+                print("Child step is not created, please check for correct step details and you have correct access for creating the steps")
+            else:
+                measure_power_output_step = response["steps"][0]
+                print(f"New child step is created with step id = {measure_power_output_step['stepId']} under step with step id = {measure_power_output_step['parentId']}")
 
             # If a test in the sweep fails, the entire sweep failed.  Mark the parent step accordingly.
             if status["statusType"] == "FAILED":
                 # Update the parent test step's status on the SystemLink enterprise.
                 response = update_step_status(parent_step, "Failed")
-                parent_step = response["steps"][0]
+                if is_partial_success_response(response):
+                    print("Updating the parent step is not completed, please check for the correct step details and you have correct access for updating the steps")
+                else:
+                    parent_step = response["steps"][0]
+                    print(f"The parent step with step id = {parent_step['stepId']} is updated successfully")
     
     # Update the step status if the status is still running.
     if parent_step["status"]["statusType"] == "RUNNING":
         response = update_step_status(parent_step, "Passed")
-        parent_step = response["steps"][0]
+        if is_partial_success_response(response):
+            print("Updating the parent step is not completed, please check for the correct step details and you have correct access for updating the steps")
+        else:
+            parent_step = response["steps"][0]
+            print(f"The parent step with step id = {parent_step['stepId']} is updated successfully")
     return parent_step
 
 
-def get_test_result():
-    test_result = {
-        "programName": "Power Test",
-        "status": {
-            "statusType": "RUNNING",
-            "statusName": "Running"
-        },
-        "systemId": None,
-        "hostName": None,
-        "properties":None,
-        "serialNumber": str(uuid.uuid4()),
-        "operator": "John Smith",
-        "partNumber": "NI-ABC-123-PWR1",
-        "fileIds":None,
-        "startedAt": str(datetime.datetime.now()),
-        "totalTimeInSeconds": 0.0
-    }
-
-    return test_result
-
-
-def create_steps(test_result):
-    # Set test limits
-    low_limit = 0
-    high_limit = 70
-
+@click.command()
+@click.option("--server", help = "Enter server url")
+@click.argument("api_key")
+def main(server, api_key):
     """
-    Simulate a sweep across a range of electrical current and voltage.
-    For each value, calculate the electrical power (P=IV).
-    """
-    for current in range(0, 10):
-        voltage_sweep_step = create_parent_step(test_result["id"])
-        voltage_sweep_step = create_child_steps(voltage_sweep_step, test_result["id"], current, low_limit, high_limit)
+    To run the example against a SystemLink Enterprise, the URL should include
+    the scheme, host, and port if not default.\n
+    For example:\n
+    python create_results_and_steps.py --server https://myserver:9091 api_key.\n
 
-def main():    
+    For more information on how to generate API key, please refer to the documentation provided.
+    """
+    test_data_manager_client.set_base_url_and_api_key(server, api_key)
 
     try:
-        test_result = get_test_result()
+        test_result = create_result()
 
-        response = test_data_manager_client.create_results(results=[test_result])
-        test_result = response["results"][0]
-
-        create_steps(test_result=test_result)
+        create_steps(test_result)
         
         # Update the top-level test result's status based on the most severe child step's status.
-        response = test_data_manager_client.update_results(results=[test_result])
-        test_result = response["results"][0]
+        update_result(test_result)
         
     except Exception as e:
         print(e)
         print("The given URL or API key might be invalid or the server might be down. Please try again after verifying the server is up and the URL or API key is valid")
         print("For more information on how to generate API key, please refer to the documentation provided.")
+        print("Try 'create_results_and_steps.py --help' for help.")
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,6 @@
 import sys
 import requests
+from typing import Any, Tuple, Dict, List
 
 create_results_route = "nitestmonitor/v2/results"
 create_steps_route = "nitestmonitor/v2/steps"
@@ -8,32 +9,22 @@ update_steps_route = "nitestmonitor/v2/update-steps"
 delete_results_route = "nitestmonitor/v2/delete-results"
 delete_result_route = "nitestmonitor/v2/results"
 
-def print_usage_and_exit(error:str):
-    print("This example requires a configuration.")
-    print(error)
-    print()
-    print("Please specify a configuration using the following arguments:")
-    print()
-    print("\t <url> <api_key>")
-    print()
-    print("To run the example against a SystemLink Enterprise, the URL should include the")
-    print("scheme, host, and port if not default. For example:")
-    print("python <example_filename.py> https://myserver:9091 api_key")
-    quit()
-
-args = sys.argv
-
-if len(args) == 3 :
-    base_uri = args[1]
-    api_key = args[2]
-    if not base_uri.endswith('/') :
-        base_uri += "/"
-else:
-    print_usage_and_exit("Please pass all the required arguments")
+api_key = ""
+base_uri = ""
 
 headers = { 'X-NI-API-KEY': api_key }
 
-def create_test_result_request(results: dict) -> dict:
+def update_headers() -> None:
+    global headers, api_key
+    headers = { 'X-NI-API-KEY': api_key }
+
+def set_base_url_and_api_key(server_uri: str, key: str) -> None:
+    global api_key, base_uri
+    base_uri = server_uri
+    api_key = key
+    update_headers()
+
+def create_test_result_request(results: List) -> Dict:
     """
     Creates a create test result request object.
     :param results: List of results that needs to be created
@@ -43,7 +34,7 @@ def create_test_result_request(results: dict) -> dict:
         "results":results
     }
 
-def test_step_create_or_update_request_object(steps: dict, update_result_total_time: bool=True) -> dict:
+def test_step_create_or_update_request_object(steps: List, update_result_total_time: bool = True) -> Dict:
     """
     Creates a create/update test step request object.
     :param results: List of steps that needs to be created/updated
@@ -56,7 +47,7 @@ def test_step_create_or_update_request_object(steps: dict, update_result_total_t
         "updateResultTotalTime": update_result_total_time
     }
 
-def update_test_results_request(results: dict, determine_status_from_steps: bool=True) -> dict:
+def update_test_results_request(results: List, determine_status_from_steps: bool = True) -> Dict:
     """
     Creates a update test result request object.
     :param results: List of results that needs to be updated
@@ -96,7 +87,7 @@ def create_results(results):
 
     return request_response.json()
 
-def update_results(results):
+def update_results(results: List) -> Dict:
     """
     Updates existing test results by merging or replacing values.
     :param results: Results which needs to be updated
@@ -110,7 +101,7 @@ def update_results(results):
 
     return request_response.json()
 
-def create_steps(steps):
+def create_steps(steps: List) -> Dict:
     """
     Creates new test steps from the supplied models. The result associated with the step must exist prior to step creation. The server automatically generates step ids if not supplied.
     :param steps: Steps which needs to be created
@@ -126,7 +117,7 @@ def create_steps(steps):
 
     return request_response.json()
 
-def update_steps(steps):
+def update_steps(steps: List) -> Dict:
     """
     Updates existing steps by merging or replacing values.
     :param steps: Steps which needs to be updated
@@ -168,7 +159,7 @@ def raise_post_request(uri, body):
     Makes the post request API call.
     :param uri: request uri which needs to be called
     :param body: API call body
-    :return: json response of the api call
+    :return: response of the api call
     """
     request_response =  requests.post(uri, json=body, headers=headers)
     request_response.raise_for_status()
