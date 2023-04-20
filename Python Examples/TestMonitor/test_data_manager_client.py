@@ -60,7 +60,7 @@ def update_test_results_request(results: List, determine_status_from_steps: bool
         "determineStatusFromSteps": determine_status_from_steps
     }
 
-def delete_results_request(result_ids, delete_steps):
+def delete_results_request(result_ids: List, delete_steps: bool):
     """
     creates a delete test results request object
     :param result_ids: List of result Ids that needs to be deleted
@@ -73,7 +73,7 @@ def delete_results_request(result_ids, delete_steps):
     }
     pass
 
-def create_results(results):
+def create_results(results: List) -> Dict:
     """
     Creates new test results from the supplied models. The server automatically generates the result ids.
     :param results: Results which needs to be created
@@ -133,7 +133,7 @@ def update_steps(steps: List) -> Dict:
 
     return request_response.json()
 
-def delete_result(result_id, delete_steps = True):
+def delete_result(result_id: str, delete_steps: bool = True):
     """
     Deletes the existing test result.
     :param result_id: result id which needs to be deleted
@@ -143,7 +143,7 @@ def delete_result(result_id, delete_steps = True):
     request_uri = f"{base_uri}{delete_result_route}/{result_id}?deleteSteps{delete_steps}"
     request_response = raise_delete_request(request_uri)
 
-def delete_results(result_ids, delete_steps = True):
+def delete_results(result_ids: List, delete_steps: bool = True):
     """
     Deletes the existing test results.
     :param result_ids: result ids which needs to be deleted
@@ -154,7 +154,7 @@ def delete_results(result_ids, delete_steps = True):
     body = delete_results_request(result_ids, delete_steps)   
     request_response = raise_post_request(request_uri, body)
 
-def raise_post_request(uri, body):
+def raise_post_request(uri: str, body: Dict) -> requests.Response:
     """
     Makes the post request API call.
     :param uri: request uri which needs to be called
@@ -166,7 +166,7 @@ def raise_post_request(uri, body):
 
     return request_response
 
-def raise_delete_request(uri):
+def raise_delete_request(uri: str) -> requests.Response:
     """
     Makes the delete request API call.
     :param uri: request uri which needs to be called
