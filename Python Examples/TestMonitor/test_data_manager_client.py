@@ -133,7 +133,7 @@ def update_steps(steps: List) -> Dict:
 
     return request_response.json()
 
-def delete_result(result_id: str, delete_steps: bool = True):
+def delete_result(result_id: str, delete_steps: bool = True) -> None:
     """
     Deletes the existing test result.
     :param result_id: result id which needs to be deleted
@@ -141,9 +141,9 @@ def delete_result(result_id: str, delete_steps: bool = True):
     if result_id == None :
         raise ValueError("Missing required parameter 'result_id' when calling ResultsApi->DeleteResultV2")
     request_uri = f"{base_uri}{delete_result_route}/{result_id}?deleteSteps{delete_steps}"
-    request_response = raise_delete_request(request_uri)
+    raise_delete_request(request_uri)
 
-def delete_results(result_ids: List, delete_steps: bool = True):
+def delete_results(result_ids: List, delete_steps: bool = True) -> Dict:
     """
     Deletes the existing test results.
     :param result_ids: result ids which needs to be deleted
@@ -153,6 +153,10 @@ def delete_results(result_ids: List, delete_steps: bool = True):
     request_uri = f"{base_uri}{delete_results_route}"
     body = delete_results_request(result_ids, delete_steps)   
     request_response = raise_post_request(request_uri, body)
+    if request_response.status_code != 204 :
+        return request_response.json()
+    else:
+        return {}
 
 def raise_post_request(uri: str, body: Dict) -> requests.Response:
     """
