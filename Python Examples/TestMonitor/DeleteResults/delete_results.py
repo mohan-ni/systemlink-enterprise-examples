@@ -11,7 +11,7 @@ import uuid
 import sys
 import os
 import datetime
-from typing import Any, Tuple, Dict, List
+from typing import Dict, List
 import click
 
 current = os.path.dirname(os.path.realpath(__file__))
